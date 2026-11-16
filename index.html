@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Make a call. Set a deadline. Let people back it or doubt it — every call and every vote lives on Base.">
+<meta name="theme-color" content="#2447dc">
+<meta property="og:title" content="Poziv — Make a call">
+<meta property="og:description" content="A prediction, a deadline, and an open vote. Stored on Base, not on our server.">
+<meta property="og:image" content="https://3esign.github.io/poziv/og.png">
+<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://3esign.github.io/poziv/og.png","button":{"title":"Back it or doubt it","action":{"type":"launch_miniapp","name":"Poziv","splashImageUrl":"https://3esign.github.io/poziv/splash.png","splashBackgroundColor":"#2447dc"}}}'>
+<meta name="fc:frame" content='{"version":"1","imageUrl":"https://3esign.github.io/poziv/og.png","button":{"title":"Back it or doubt it","action":{"type":"launch_frame","name":"Poziv","splashImageUrl":"https://3esign.github.io/poziv/splash.png","splashBackgroundColor":"#2447dc"}}}'>
+<link rel="icon" href="icon.png">
+<title>Poziv — Make a call</title>
+<style>
+:root{color-scheme:light;--paper:#f5f3ed;--ink:#20231f;--muted:#62665e;--line:#d6d8cf;--blue:#2447dc;--blue2:#1938b6;--warm:#b74b10;--bad:#9c291a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:var(--blue)}button,input,textarea{font:inherit}button,a{touch-action:manipulation}
+:focus-visible{outline:3px solid var(--warm);outline-offset:4px}
+header,main,footer{max-width:1184px;margin:auto;padding-left:40px;padding-right:40px}
+header{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.brand{font-weight:800;font-size:24px;letter-spacing:-1px;display:flex;align-items:center;gap:12px;color:var(--ink);text-decoration:none}
+.mark{width:25px;height:25px;background:var(--blue);display:inline-block;border-radius:50% 50% 0 50%}
+.chip{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:#9aa092}.dot.on{background:#2f8a4a}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+.intro{padding:48px 0 32px;max-width:820px}
+h1{font-size:clamp(42px,6vw,76px);line-height:1.02;letter-spacing:-3px;margin:12px 0 20px;font-weight:750}h1 span{color:var(--blue)}
+.lead{color:var(--muted);max-width:520px;font-size:18px;margin:0}
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:56px;padding-bottom:48px}
+label{display:block;font-size:14px;font-weight:650;margin-bottom:10px}
+textarea,input{display:block;width:100%;background:#fff;border:1px solid #b9bdb2;border-radius:6px;color:var(--ink);padding:16px;min-height:52px}
+textarea{resize:vertical;min-height:140px;font-size:18px;line-height:1.5}textarea:focus,input:focus{border-color:var(--blue)}
+.hint{display:flex;gap:12px;justify-content:space-between;margin:8px 0 24px;font-size:12px;color:var(--muted)}#count{font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:56px;padding:16px 20px;border:0;border-radius:6px;background:var(--blue);color:#fff;font-weight:650;cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--blue2)}.btn[disabled]{opacity:.55;cursor:wait}
+.ghost{border:1px solid #a9aea1;border-radius:6px;background:transparent;color:var(--ink);min-height:48px;padding:10px 16px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.ghost:hover{border-color:var(--ink)}
+.fine{font-size:12px;color:var(--muted)}
+.card{background:var(--blue);color:#fff;min-height:320px;padding:30px;display:flex;flex-direction:column;border-radius:2px}
+.cardtop{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:650;letter-spacing:.8px}
+.pill{border:1px solid #ffffff70;padding:3px 10px;border-radius:20px;font-size:10px;letter-spacing:.8px;text-transform:uppercase}
+blockquote{margin:28px 0 36px;font-size:clamp(23px,2.8vw,36px);font-weight:600;line-height:1.22;letter-spacing:-.6px;overflow-wrap:anywhere;white-space:pre-wrap}
+.deadline{margin-top:auto;padding-top:16px;border-top:1px solid #ffffff66;display:flex;justify-content:space-between;gap:12px;font-size:12px;flex-wrap:wrap}
+.votes{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-top:0;background:#fff}
+.vote{border:0;background:#fff;padding:18px 22px;text-align:left;cursor:pointer;min-height:76px;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
+.vote+.vote{border-left:1px solid var(--line)}.vote:hover{background:#eef1fd}.vote[disabled]{cursor:default;background:#fafaf7}
+.vote b{font-size:15px}.vote .n{font-size:28px;font-weight:750;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.vote.mine{box-shadow:inset 0 -4px 0 var(--blue)}
+.bar{height:6px;background:#e3e5dc;display:flex}.bar i{display:block;background:var(--blue)}.bar i+i{background:#c9cdbf}
+.status{min-height:24px;font-size:14px;margin:14px 0}.status.err{color:var(--bad)}
+.side h2{font-size:28px;letter-spacing:-.8px;margin:0 0 8px}.side p{color:var(--muted);margin:0 0 20px}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1 1 160px}
+.list{border-top:1px solid var(--line);padding:28px 0 40px}
+.list h2{font-size:14px;margin:0 0 16px}.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.item{display:block;background:#fff;border:1px solid var(--line);padding:18px;color:var(--ink);text-decoration:none;min-height:150px}
+.item:hover{border-color:var(--blue)}.item q{display:block;font-weight:600;font-size:17px;line-height:1.3;quotes:none;overflow-wrap:anywhere;margin:8px 0 14px}
+.item .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;border-top:1px solid var(--line);padding:28px 0 40px}
+.how b{font-size:14px}.how p{font-size:13px;color:var(--muted);margin:6px 0 0}.num{font-size:12px;color:var(--blue);display:block;margin-bottom:8px}
+footer{border-top:1px solid var(--line);padding-top:24px;padding-bottom:36px;color:var(--muted);font-size:12px}
+footer a{overflow-wrap:anywhere}
+[hidden]{display:none!important}
+@media(max-width:760px){header,main,footer{padding-left:24px;padding-right:24px}header{height:72px}.intro{padding:32px 0 24px}h1{letter-spacing:-2px}.workspace{grid-template-columns:1fr;gap:32px}.card{min-height:280px}.how{gap:20px}.lead{font-size:16px}}
+@media(max-width:380px){header,main,footer{padding-left:18px;padding-right:18px}.card{padding:22px}.how{grid-template-columns:1fr;gap:16px}.vote{padding:14px 16px}}
+@media(prefers-reduced-motion:no-preference){.btn,.ghost,.vote{transition:background 150ms ease,border-color 150ms ease}}
+.hdr{display:flex;gap:10px;align-items:center}#addapp{padding:6px 12px;font-size:14px}
+body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-left:18px;padding-right:18px}
+</style>
+</head>
+<body>
+<header><a class="brand" href="?"><i class="mark" aria-hidden="true"></i>Poziv</a><span class="hdr"><button class="ghost" id="addapp" type="button" hidden>Add to Farcaster</button><span class="chip"><i class="dot" id="netdot"></i><span id="net">Reading Base…</span></span></span></header>
+<main>
+
+<!-- HOME: make a call -->
+<section id="home" hidden>
+  <section class="intro"><div class="eyebrow">Public predictions, kept on Base</div><h1>Make a call.<br><span>Let people weigh in.</span></h1><p class="lead">Say what you think will happen and by when. Anyone can back it or doubt it from their own wallet. No account, no server — the record lives onchain.</p></section>
+  <div class="workspace">
+    <section aria-label="Write your call">
+      <form id="f" novalidate>
+        <label for="c">What will happen?</label>
+        <textarea id="c" rows="4" placeholder="ETH closes above $2,500 on December 31."></textarea>
+        <div class="hint"><span>One claim with an outcome anyone can check.</span><span id="count">0 / 320</span></div>
+        <label for="d">Deadline</label>
+        <input id="d" type="date">
+        <div class="hint"><span>Voting closes at the start of this day (UTC).</span></div>
+        <button class="btn" id="publish" type="submit"><span>Publish on Base</span><span aria-hidden="true">→</span></button>
+        <p class="status" id="fstatus" role="status"></p>
+        <p class="fine" id="feeline">You sign with your own wallet. Registry fee and gas are shown in your wallet before you confirm.</p>
+      </form>
+    </section>
+    <section aria-label="Preview">
+      <div class="card"><div class="cardtop"><span>POZIV</span><span class="pill">Preview</span></div><blockquote id="pv">Your call appears here.</blockquote><div class="deadline"><span>Deadline</span><span id="pvd">—</span></div></div>
+      <div class="votes"><div class="vote" aria-hidden="true"><b>Back</b><span class="fine">agree</span></div><div class="vote" aria-hidden="true"><b>Doubt</b><span class="fine">disagree</span></div></div>
+    </section>
+  </div>
+  <section class="list" aria-labelledby="lt"><h2 id="lt" class="eyebrow">Calls on Base</h2><div class="items" id="items"><p class="fine">Loading from Base…</p></div></section>
+  <section class="how" aria-label="How it works">
+    <div><span class="num">01</span><b>Make it specific.</b><p>One claim, a clear outcome, a date to come back to.</p></div>
+    <div><span class="num">02</span><b>Share it.</b><p>Post the link on Farcaster or anywhere people argue about the future.</p></div>
+    <div><span class="num">03</span><b>Count what people said.</b><p>One wallet, one vote, changeable until the deadline. Votes are opinion, not proof.</p></div>
+  </section>
+</section>
+
+<!-- CLAIM VIEW -->
+<section id="claim" hidden>
+  <div class="workspace" style="padding-top:40px">
+    <section aria-label="The call">
+      <div class="card"><div class="cardtop"><span id="cid">CALL</span><span class="pill" id="cstate">Open</span></div><blockquote id="ctext">Loading from Base…</blockquote><div class="deadline"><span id="cauthor">—</span><span id="cdl">—</span></div></div>
+      <div class="bar" aria-hidden="true"><i id="bb" style="width:0"></i><i id="bd" style="width:0"></i></div>
+      <div class="votes">
+        <button class="vote" id="vb" data-side="1" disabled><b>Back</b><span class="n" id="nb">–</span><span class="fine">agree</span></button>
+        <button class="vote" id="vd" data-side="2" disabled><b>Doubt</b><span class="n" id="nd">–</span><span class="fine">disagree</span></button>
+      </div>
+      <p class="status" id="vstatus" role="status"></p>
+    </section>
+    <section class="side" aria-label="Share">
+      <h2>Bring people in.</h2>
+      <p>Every vote is a signed transaction from the voter's own wallet on Base — a few cents of gas at most, paid by them. You can change your vote until the deadline.</p>
+      <div class="row"><a class="btn" id="fc" target="_blank" rel="noopener"><span>Share on Farcaster</span><span aria-hidden="true">↗</span></a></div>
+      <div class="row" style="margin-top:12px"><button class="ghost" id="copy" type="button">Copy link</button><a class="ghost" href="?">Make your own call</a></div>
+      <p class="fine" id="copystat" role="status"></p>
+      <p class="fine" id="proof"></p>
+    </section>
+  </div>
+</section>
+
+</main>
+<footer>
+  <div>No server holds your call or your vote. This page only reads Base and asks your wallet to sign.</div>
+  <div>Calls: <a id="lreg" target="_blank" rel="noopener">PozivRegistry</a> · Votes: <a id="lvot" target="_blank" rel="noopener">PozivVotes</a> (no owner, no fee, immutable) · Votes count opinion, not truth.</div>
+</footer>
+
+<script>
+(() => {
+'use strict';
+const CHAIN = '0x2105';
+const REG = '0xc127fefa8df4b02bbce81902995803944e55072c';
+const VOTES = '0xe89e5c669998f539647d2c7bb3182c1df0b8505c';
+const REG_FROM = 56179968; // first block with registry code
+const RPCS = ['https://base-rpc.publicnode.com', 'https://mainnet.base.org'];
+const T_REG = '0x702c4507c930e55c4b0da18698416769ec8a4341484186e3a64930b88e83c2f2';
+const SEL = { count: '06661abd', claims: 'a888c2cd', feeWei: '428c090b', tally: 'ed8b6b31', voteOf: '45ddc85d', vote: 'e520251a', registerWithEth: '592fd3c4' };
+const ERR = { '9b0e91e1': 'This call does not exist.', '1cdde67b': 'Voting on this call has closed.', '8f3723ea': 'Invalid vote.', '710e1ce5': 'Deadline must be in the future and within five years.', '5a2a093e': 'The call must be 1–320 bytes.', '98d4901c': 'Fee changed — reload the page.' };
+const SCAN = 'https://basescan.org/';
+const $ = (id) => document.getElementById(id);
+const enc = new TextEncoder(), dec = new TextDecoder();
+const word = (n) => BigInt(n).toString(16).padStart(64, '0');
+const hexToBytes = (h) => { const b = new Uint8Array(h.length / 2); for (let i = 0; i < b.length; i++) b[i] = parseInt(h.substr(i * 2, 2), 16); return b; };
+const bytesToHex = (b) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
+const fmtDate = (s) => new Date(s * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+$('lreg').href = SCAN + 'address/' + REG; $('lvot').href = SCAN + 'address/' + VOTES;
+
+// ---------- Farcaster mini app: SDK loads only inside a Farcaster client ----------
+const FC = { on: false, sdk: null, fid: 0, eth: null };
+const fcReady = (async () => {
+  if (window.parent === window && !window.ReactNativeWebView) return;
+  try {
+    const { sdk } = await import('./fc-sdk.js');
+    if (!(await sdk.isInMiniApp())) return;
+    FC.sdk = sdk; FC.on = true; document.body.classList.add('fc');
+    const ctx = await sdk.context; FC.fid = (ctx && ctx.user && Number(ctx.user.fid)) || 0;
+    try { FC.eth = await sdk.wallet.getEthereumProvider(); } catch {}
+    if (ctx && ctx.client && !ctx.client.added) { const b = $('addapp'); b.hidden = false; b.onclick = async () => { try { await sdk.actions.addMiniApp(); b.hidden = true; } catch {} }; }
+    document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[target=_blank]'); if (a && a.href && a.id !== 'fc') { e.preventDefault(); sdk.actions.openUrl(a.href); } });
+  } catch {}
+})();
+const fcDone = () => fcReady.then(() => FC.sdk && FC.sdk.actions.ready().catch(() => {}));
+const provider = () => FC.eth || window.ethereum;
+async function share(text, url) {
+  if (FC.on) { try { await FC.sdk.actions.composeCast({ text, embeds: [url] }); return true; } catch {} }
+  return false;
+}
+
+// ---------- read side: public RPC with fallback ----------
+let rpcIdx = 0;
+async function rpc(method, params) {
+  let last;
+  for (let k = 0; k < RPCS.length; k++) {
+    const url = RPCS[(rpcIdx + k) % RPCS.length];
+    try {
+      const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(10000) });
+      const j = await r.json();
+      if (j.error) { const e = new Error(j.error.message || 'rpc'); e.data = j.error.data; if (method === 'eth_call' || method === 'eth_estimateGas') throw e; last = e; continue; }
+      rpcIdx = (rpcIdx + k) % RPCS.length; return j.result;
+    } catch (e) { if (e.data !== undefined) throw e; last = e; }
+  }
+  throw last || new Error('Base is not reachable');
+}
+const call = (to, data) => rpc('eth_call', [{ to, data: '0x' + data }, 'latest']);
+const words = (hex) => { const d = hex.slice(2); const out = []; for (let i = 0; i < d.length; i += 64) out.push(BigInt('0x' + d.slice(i, i + 64))); return out; };
+
+async function getClaim(id) {
+  const w = words(await call(REG, SEL.claims + word(id)));
+  return { id, author: '0x' + w[0].toString(16).padStart(40, '0'), createdAt: Number(w[1]), deadline: Number(w[2]), outcome: Number(w[3]) };
+}
+async function getTally(id) { const w = words(await call(VOTES, SEL.tally + word(id))); return [Number(w[0]), Number(w[1])]; }
+
+function decodeLog(log) {
+  const d = log.data.slice(2), at = (i) => BigInt('0x' + d.slice(i * 64, i * 64 + 64));
+  const off = Number(at(2)) * 2, len = Number(BigInt('0x' + d.slice(off, off + 64)));
+  return { id: Number(BigInt(log.topics[1])), fid: Number(BigInt(log.topics[3])), deadline: Number(at(1)), text: dec.decode(hexToBytes(d.slice(off + 64, off + 64 + len * 2))), tx: log.transactionHash };
+}
+const blockTs = async (n) => Number((await rpc('eth_getBlockByNumber', ['0x' + n.toString(16), false])).timestamp);
+let headCache;
+async function head() { if (!headCache) { const n = Number(await rpc('eth_blockNumber', [])); headCache = { n, t: await blockTs(n) }; } return headCache; }
+// Find the block for a timestamp by interpolation (few header reads), then read the event in a small window.
+async function claimText(c) {
+  const key = 'poziv:t:' + c.id; const hit = sessionStorage.getItem(key); if (hit) return JSON.parse(hit);
+  const h = await head();
+  let lo = { n: REG_FROM, t: await blockTs(REG_FROM) }, hi = h, guess = REG_FROM;
+  for (let i = 0; i < 8 && hi.n - lo.n > 400; i++) {
+    guess = Math.round(lo.n + (hi.n - lo.n) * (c.createdAt - lo.t) / Math.max(1, hi.t - lo.t));
+    guess = Math.min(hi.n - 1, Math.max(lo.n + 1, guess));
+    const t = await blockTs(guess);
+    if (t === c.createdAt) { lo = { n: guess - 200, t }; hi = { n: guess + 200, t }; break; }
+    if (t < c.createdAt) lo = { n: guess, t }; else hi = { n: guess, t };
+  }
+  const logs = await rpc('eth_getLogs', [{ address: REG, topics: [T_REG, '0x' + word(c.id)], fromBlock: '0x' + Math.max(REG_FROM, lo.n - 50).toString(16), toBlock: '0x' + Math.min(h.n, hi.n + 50).toString(16) }]);
+  const log = (logs || []).find((l) => l.address.toLowerCase() === REG && !l.removed);
+  if (!log) throw new Error('text not found');
+  const r = decodeLog(log); sessionStorage.setItem(key, JSON.stringify(r)); return r;
+}
+
+function setNet(ok, txt) { $('netdot').classList.toggle('on', ok); $('net').textContent = txt; }
+
+// ---------- write side: the user's own wallet ----------
+async function wallet() {
+  await fcReady;
+  const eth = provider();
+  if (!eth) throw new Error('No wallet found. Open this page in a wallet browser (Base app, Coinbase Wallet, MetaMask, Rabby) or a desktop browser with a wallet extension.');
+  const [from] = await eth.request({ method: 'eth_requestAccounts' });
+  const cid = await eth.request({ method: 'eth_chainId' });
+  if (String(cid).toLowerCase() !== CHAIN) {
+    try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: CHAIN }] }); }
+    catch (e) {
+      if (e && e.code === 4902) await eth.request({ method: 'wallet_addEthereumChain', params: [{ chainId: CHAIN, chainName: 'Base', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: ['https://mainnet.base.org'], blockExplorerUrls: [SCAN] }] });
+      else throw e;
+    }
+  }
+  return { eth, from: from.toLowerCase() };
+}
+function explain(e) {
+  const raw = (e && (e.data && (e.data.data || e.data)) || '') + ' ' + (e && e.message || '');
+  for (const k in ERR) if (raw.includes(k)) return ERR[k];
+  if (e && (e.code === 4001 || /reject|denied/i.test(raw))) return 'You cancelled in your wallet. Nothing was sent.';
+  return (e && e.message) || 'Something went wrong.';
+}
+async function send(tx, status) {
+  const { eth, from } = await wallet();
+  await rpc('eth_call', [{ from, ...tx }, 'latest']); // simulate first: clear errors, no gas wasted
+  status('Confirm in your wallet…');
+  const hash = await eth.request({ method: 'eth_sendTransaction', params: [{ from, ...tx }] });
+  status('Sent. Waiting for Base to include it…');
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    const rc = await rpc('eth_getTransactionReceipt', [hash]).catch(() => null);
+    if (rc) { if (rc.status !== '0x1') throw new Error('The transaction failed on Base.'); return { rc, from, hash }; }
+  }
+  throw new Error('Still pending. Check your wallet activity; the page will show the result after reload.');
+}
+
+// ---------- home ----------
+function homeView() {
+  $('home').hidden = false;
+  const c = $('c'), d = $('d'), st = $('fstatus');
+  const today = new Date(); const min = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1));
+  d.min = min.toISOString().slice(0, 10);
+  d.max = new Date(Date.UTC(today.getUTCFullYear() + 5, today.getUTCMonth(), today.getUTCDate() - 1)).toISOString().slice(0, 10);
+  if (!d.value) d.value = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 30)).toISOString().slice(0, 10);
+  const upd = () => { const n = enc.encode(c.value.trim()).length; $('count').textContent = n + ' / 320'; $('count').style.color = n > 320 ? 'var(--bad)' : ''; $('pv').textContent = c.value.trim() || 'Your call appears here.'; $('pvd').textContent = d.value ? fmtDate(Date.parse(d.value) / 1000) : '—'; };
+  c.addEventListener('input', upd); d.addEventListener('input', upd); upd();
+  let fee = null;
+  call(REG, SEL.feeWei).then((h) => { fee = BigInt(h); $('feeline').textContent = 'You sign with your own wallet. Registry fee ' + (Number(fee) / 1e18).toFixed(6) + ' ETH plus gas, shown in your wallet before you confirm.'; }).catch(() => {});
+  $('f').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const text = c.value.trim(), bytes = enc.encode(text), dl = Math.floor(Date.parse(d.value) / 1000);
+    const say = (m, err) => { st.textContent = m; st.classList.toggle('err', !!err); };
+    if (!bytes.length || bytes.length > 320) return say('Write a call of 1–320 bytes.', true);
+    if (!dl || dl <= Date.now() / 1000) return say('Pick a deadline in the future.', true);
+    const btn = $('publish'); btn.disabled = true;
+    try {
+      if (fee === null) fee = BigInt(await call(REG, SEL.feeWei));
+      const data = '0x' + SEL.registerWithEth + word(96) + word(dl) + word(FC.fid) + word(bytes.length) + bytesToHex(bytes).padEnd(Math.ceil(bytes.length / 32) * 64, '0');
+      const { rc } = await send({ to: REG, data, value: '0x' + fee.toString(16) }, say);
+      const log = rc.logs.find((l) => l.address.toLowerCase() === REG && l.topics[0] === T_REG);
+      const r = decodeLog(log); sessionStorage.setItem('poziv:t:' + r.id, JSON.stringify(r));
+      if (FC.on) await share('My call: ' + r.text + '\n\nBack it or doubt it — votes live on Base.', location.origin + location.pathname + '?id=' + r.id);
+      location.search = '?id=' + r.id;
+    } catch (e) { say(explain(e), true); } finally { btn.disabled = false; }
+  });
+  loadList();
+}
+async function loadList() {
+  const box = $('items');
+  try {
+    const n = Number(BigInt(await call(REG, SEL.count))); setNet(true, 'Live on Base · ' + n + (n === 1 ? ' call' : ' calls'));
+    if (!n) { box.innerHTML = '<p class="fine">No calls yet. Be the first.</p>'; return; }
+    box.textContent = '';
+    for (let id = n - 1; id >= Math.max(0, n - 12); id--) {
+      const a = document.createElement('a'); a.className = 'item'; a.href = '?id=' + id;
+      const top = document.createElement('div'); top.className = 'meta'; top.innerHTML = '<span>#' + id + '</span><span></span>';
+      const q = document.createElement('q'); q.textContent = '…';
+      const meta = document.createElement('div'); meta.className = 'meta'; meta.innerHTML = '<span></span><span></span>';
+      a.append(top, q, meta); box.append(a);
+      Promise.all([getClaim(id), getTally(id)]).then(async ([c, [b, d]]) => {
+        const open = Date.now() / 1000 < c.deadline;
+        top.lastChild.textContent = open ? 'Open' : 'Closed';
+        meta.firstChild.textContent = 'Back ' + b + ' · Doubt ' + d; meta.lastChild.textContent = 'until ' + fmtDate(c.deadline);
+        q.textContent = (await claimText(c)).text;
+      }).catch(() => { q.textContent = 'Could not read this call right now.'; });
+    }
+  } catch (e) { setNet(false, 'Base unreachable'); box.innerHTML = '<p class="fine">Could not reach Base. Try again in a moment.</p>'; }
+}
+
+// ---------- claim ----------
+async function claimView(id) {
+  $('claim').hidden = false;
+  const url = location.origin + location.pathname + '?id=' + id;
+  $('cid').textContent = 'CALL #' + id;
+  const vs = (m, err) => { $('vstatus').textContent = m; $('vstatus').classList.toggle('err', !!err); };
+  $('copy').onclick = async () => { try { await navigator.clipboard.writeText(url); $('copystat').textContent = 'Link copied.'; } catch { $('copystat').textContent = url; } };
+  let c, shareText = 'Back it or doubt it — votes live on Base.';
+  try {
+    const n = Number(BigInt(await call(REG, SEL.count)));
+    if (id >= n) { $('ctext').textContent = 'This call does not exist.'; setNet(true, 'Live on Base'); return; }
+    c = await getClaim(id); setNet(true, 'Live on Base');
+  } catch (e) { setNet(false, 'Base unreachable'); $('ctext').textContent = 'Could not reach Base. Try again in a moment.'; return; }
+  const open = Date.now() / 1000 < c.deadline;
+  $('cstate').textContent = open ? 'Open' : 'Closed';
+  $('cauthor').textContent = 'by ' + short(c.author);
+  $('cdl').textContent = (open ? 'Voting until ' : 'Closed ') + fmtDate(c.deadline);
+  const refresh = async (mine) => {
+    const [b, d] = await getTally(id); const t = b + d;
+    $('nb').textContent = b; $('nd').textContent = d;
+    $('bb').style.width = t ? (100 * b / t) + '%' : '0'; $('bd').style.width = t ? (100 * d / t) + '%' : '0';
+    if (mine !== undefined) { $('vb').classList.toggle('mine', mine === 1); $('vd').classList.toggle('mine', mine === 2); }
+  };
+  refresh().catch(() => {});
+  claimText(c).then((r) => {
+    $('ctext').textContent = r.text;
+    $('proof').innerHTML = ''; const a = document.createElement('a'); a.href = SCAN + 'tx/' + r.tx; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Registration on Basescan'; $('proof').append(a);
+    shareText = '“' + r.text + '”' + '\n\nBack it or doubt it — votes live on Base.';
+    $('fc').href = 'https://farcaster.xyz/~/compose?text=' + encodeURIComponent('“' + r.text + '”' + '\n\nBack it or doubt it — votes live on Base.') + '&embeds[]=' + encodeURIComponent(url);
+    document.title = 'Poziv — ' + r.text.slice(0, 60);
+  }).catch(() => { $('ctext').textContent = 'The call exists, but its text could not be read right now.'; });
+  $('fc').href = 'https://farcaster.xyz/~/compose?embeds[]=' + encodeURIComponent(url);
+  $('fc').onclick = (e) => { if (!FC.on) return; e.preventDefault(); share(shareText, url); };
+  if (!open) { vs('Voting closed at the deadline. The final count is above.'); return; }
+  for (const btn of [$('vb'), $('vd')]) {
+    btn.disabled = false;
+    btn.onclick = async () => {
+      const side = Number(btn.dataset.side);
+      $('vb').disabled = $('vd').disabled = true;
+      try {
+        const { from } = await send({ to: VOTES, data: '0x' + SEL.vote + word(id) + word(side) + word(FC.fid) }, vs);
+        const mine = Number(BigInt(await call(VOTES, SEL.voteOf + word(id) + from.slice(2).padStart(64, '0'))));
+        await refresh(mine); vs(mine === side ? 'Your vote is on Base. You can change it until the deadline.' : 'Recorded.');
+      } catch (e) { vs(explain(e), true); } finally { $('vb').disabled = $('vd').disabled = false; }
+    };
+  }
+  fcReady.then(() => provider() && provider().request({ method: 'eth_accounts' })).then(async (acc) => {
+    if (!acc || !acc[0]) return; const mine = Number(BigInt(await call(VOTES, SEL.voteOf + word(id) + acc[0].toLowerCase().slice(2).padStart(64, '0')))); refresh(mine);
+  }).catch(() => {});
+}
+
+const p = new URLSearchParams(location.search).get('id');
+if (p !== null && /^\d{1,9}$/.test(p)) claimView(Number(p)); else homeView();
+fcDone();
+})();
+</script>
+</body>
+</html>
