@@ -50,6 +50,13 @@ blockquote{margin:28px 0 36px;font-size:clamp(23px,2.8vw,36px);font-weight:600;l
 .vote.mine{box-shadow:inset 0 -4px 0 var(--blue)}
 .bar{height:6px;background:#e3e5dc;display:flex}.bar i{display:block;background:var(--blue)}.bar i+i{background:#c9cdbf}
 .status{min-height:24px;font-size:14px;margin:14px 0}.status.err{color:var(--bad)}
+.voters{border:1px solid var(--line);background:#fff;padding:14px 16px;margin-top:8px;font-size:13px}
+.vhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.vhead b{color:var(--ink)}
+.vrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);flex-wrap:wrap}
+.vwho{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.vmeta{display:flex;align-items:center;gap:8px}
+.vtag{border:1px solid var(--blue);color:var(--blue);padding:1px 7px;border-radius:12px;font-size:11px;font-weight:650}
 .side h2{font-size:28px;letter-spacing:-.8px;margin:0 0 8px}.side p{color:var(--muted);margin:0 0 20px}
 .row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1 1 160px}
 .list{border-top:1px solid var(--line);padding:28px 0 40px}
@@ -65,12 +72,13 @@ footer a{overflow-wrap:anywhere}
 @media(max-width:760px){header,main,footer{padding-left:24px;padding-right:24px}header{height:72px}.intro{padding:32px 0 24px}h1{letter-spacing:-2px}.workspace{grid-template-columns:1fr;gap:32px}.card{min-height:280px}.how{gap:20px}.lead{font-size:16px}}
 @media(max-width:380px){header,main,footer{padding-left:18px;padding-right:18px}.card{padding:22px}.how{grid-template-columns:1fr;gap:16px}.vote{padding:14px 16px}}
 @media(prefers-reduced-motion:no-preference){.btn,.ghost,.vote{transition:background 150ms ease,border-color 150ms ease}}
-.hdr{display:flex;gap:10px;align-items:center}#addapp{padding:6px 12px;font-size:14px}
+.hdr{display:flex;gap:8px;align-items:center}#addapp,#fsbtn{padding:6px 12px;font-size:13px;min-height:36px}
 body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-left:18px;padding-right:18px}
 .share-note{background:#fff;border:1px solid var(--blue);border-radius:6px;padding:12px 14px;margin-bottom:18px;font-size:13px;line-height:1.5}
 .share-note b{color:var(--blue)}
-.author-btn{background:transparent;border:0;padding:0;color:var(--blue);cursor:pointer;font-weight:600;font-size:inherit;text-decoration:underline}
-.author-btn:hover{color:var(--blue2)}
+.author-btn{background:transparent;border:0;padding:0;color:#fff;cursor:pointer;font-weight:650;font-size:inherit;text-decoration:underline}
+.vwho .author-btn{color:var(--blue)}
+.vwho .author-btn:hover{color:var(--blue2)}
 .other-calls{margin-top:36px;border-top:1px solid var(--line);padding-top:24px}
 .other-calls h3{font-size:12px;margin:0 0 12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
 .compact-items{display:flex;flex-direction:column;gap:8px}
@@ -80,7 +88,7 @@ body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-le
 </style>
 </head>
 <body>
-<header><a class="brand" href="?"><i class="mark" aria-hidden="true"></i>Poziv</a><span class="hdr"><button class="ghost" id="addapp" type="button" hidden>Add to Farcaster</button><span class="chip"><i class="dot" id="netdot"></i><span id="net">Reading Base…</span></span></span></header>
+<header><a class="brand" href="?"><i class="mark" aria-hidden="true"></i>Poziv</a><span class="hdr"><button class="ghost" id="fsbtn" type="button" hidden>Full screen</button><button class="ghost" id="addapp" type="button" hidden>Add to Farcaster</button><span class="chip"><i class="dot" id="netdot"></i><span id="net">Reading Base…</span></span></span></header>
 <main>
 
 <!-- HOME: make a call -->
@@ -125,12 +133,17 @@ body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-le
         <button class="vote" id="vd" data-side="2" disabled><b>Doubt</b><span class="n" id="nd">–</span><span class="fine">disagree</span></button>
       </div>
       <p class="status" id="vstatus" role="status"></p>
+      <div class="voters" id="voterbox" hidden aria-label="Onchain voters">
+        <div class="vhead"><span id="vcitizen">Reading voters on Base…</span><span id="vcount"></span></div>
+        <div id="vrows"></div>
+      </div>
     </section>
     <section class="side" aria-label="Share">
       <h2>Bring people in.</h2>
       <p>Every vote is a signed transaction from the voter's own wallet on Base — a few cents of gas at most, paid by them. You can change your vote until the deadline.</p>
       <div class="row"><a class="btn" id="fc" target="_blank" rel="noopener"><span>Share on Farcaster</span><span aria-hidden="true">↗</span></a></div>
       <div class="row" id="replyrow" hidden style="margin-top:12px"><button class="btn" id="replythread" type="button" style="background:#492cb7"><span>Reply in Farcaster thread</span><span aria-hidden="true">↵</span></button></div>
+      <div class="row" id="srcrow" hidden style="margin-top:12px"><button class="ghost" id="srcast" type="button">View source cast</button></div>
       <div class="row" style="margin-top:12px"><button class="ghost" id="copy" type="button">Copy link</button><a class="ghost" href="?">Make your own call</a></div>
       <p class="fine" id="copystat" role="status"></p>
       <p class="fine" id="proof"></p>
@@ -145,7 +158,7 @@ body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-le
 </main>
 <footer>
   <div>No server holds your call or your vote. This page only reads Base and asks your wallet to sign.</div>
-  <div>Calls: <a id="lreg" target="_blank" rel="noopener">PozivRegistry</a> · Votes: <a id="lvot" target="_blank" rel="noopener">PozivVotes</a> (no owner, no fee, immutable) · Votes count opinion, not truth.</div>
+  <div>Calls: <a id="lreg" target="_blank" rel="noopener">PozivRegistry</a> · Votes: <a id="lvot" target="_blank" rel="noopener">PozivVotes</a> (no owner, no fee, immutable) · Sybil lens: <a id="lns" target="_blank" rel="noopener">NS Citizen VOTE</a> · Votes count opinion, not truth.</div>
 </footer>
 
 <script>
@@ -154,10 +167,14 @@ body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-le
 const CHAIN = '0x2105';
 const REG = '0xc127fefa8df4b02bbce81902995803944e55072c';
 const VOTES = '0xe89e5c669998f539647d2c7bb3182c1df0b8505c';
-const REG_FROM = 56179968; // first block with registry code
+const NS_VOTE = '0x4ecfed276c566aeb49da1f3a888e8dbb7263028d'; // Network School Farcaster citizen token on Base
+const REG_FROM = 56179968;
+const VOTES_FROM = 58164142;
 const RPCS = ['https://base-rpc.publicnode.com', 'https://mainnet.base.org'];
 const T_REG = '0x702c4507c930e55c4b0da18698416769ec8a4341484186e3a64930b88e83c2f2';
-const SEL = { count: '06661abd', claims: 'a888c2cd', feeWei: '428c090b', tally: 'ed8b6b31', voteOf: '45ddc85d', vote: 'e520251a', registerWithEth: '592fd3c4' };
+const T_VOTED = '0x2635c84c3a8027a303ca6d6e90b1c4a9604754040372414d244aadfa64717518';
+const SEL = { count: '06661abd', claims: 'a888c2cd', feeWei: '428c090b', tally: 'ed8b6b31', voteOf: '45ddc85d', vote: 'e520251a', registerWithEth: '592fd3c4', balanceOf: '70a08231' };
+const BUILDER_CODE = ''; // Optional Base Builder Code (bc_...) appended per ERC-8021 schema 0 when set
 const ERR = { '9b0e91e1': 'This call does not exist.', '1cdde67b': 'Voting on this call has closed.', '8f3723ea': 'Invalid vote.', '710e1ce5': 'Deadline must be in the future and within five years.', '5a2a093e': 'The call must be 1–320 bytes.', '98d4901c': 'Fee changed — reload the page.' };
 const SCAN = 'https://basescan.org/';
 const $ = (id) => document.getElementById(id);
@@ -165,28 +182,48 @@ const enc = new TextEncoder(), dec = new TextDecoder();
 const word = (n) => BigInt(n).toString(16).padStart(64, '0');
 const hexToBytes = (h) => { const b = new Uint8Array(h.length / 2); for (let i = 0; i < b.length; i++) b[i] = parseInt(h.substr(i * 2, 2), 16); return b; };
 const bytesToHex = (b) => Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+const withBuilderCode = (hex) => {
+  if (!BUILDER_CODE) return hex;
+  const b = enc.encode(BUILDER_CODE);
+  return hex + bytesToHex(b) + b.length.toString(16).padStart(2, '0') + '00' + '80218021802180218021802180218021';
+};
 const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
 const fmtDate = (s) => new Date(s * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-$('lreg').href = SCAN + 'address/' + REG; $('lvot').href = SCAN + 'address/' + VOTES;
+$('lreg').href = SCAN + 'address/' + REG;
+$('lvot').href = SCAN + 'address/' + VOTES;
+$('lns').href = SCAN + 'token/' + NS_VOTE;
 
 // ---------- Farcaster mini app: SDK loads only inside a Farcaster client ----------
-const FC = { on: false, sdk: null, fid: 0, eth: null, ctx: null, parentCast: null, shareCast: null };
+const FC = { on: false, sdk: null, fid: 0, eth: null, ctx: null, parentCast: null, shareCast: null, channelKey: undefined, caps: new Set(), fs: false };
 const fcReady = (async () => {
   if (window.parent === window && !window.ReactNativeWebView) return;
   try {
     const { sdk } = await import('./fc-sdk.js');
     if (!(await sdk.isInMiniApp())) return;
     FC.sdk = sdk; FC.on = true; document.body.classList.add('fc');
+    try { const caps = await sdk.getCapabilities(); if (Array.isArray(caps)) FC.caps = new Set(caps); } catch {}
     const ctx = await sdk.context; FC.ctx = ctx;
     FC.fid = (ctx && ctx.user && Number(ctx.user.fid)) || 0;
     if (ctx && ctx.location) {
+      if (ctx.location.channel && ctx.location.channel.key) FC.channelKey = ctx.location.channel.key;
       if (ctx.location.type === 'cast_embed' && ctx.location.cast) {
         FC.parentCast = ctx.location.cast;
+        if (!FC.channelKey && ctx.location.cast.channelKey) FC.channelKey = ctx.location.cast.channelKey;
       } else if (ctx.location.type === 'cast_share' && ctx.location.cast) {
         FC.shareCast = ctx.location.cast;
+        if (!FC.channelKey && ctx.location.cast.channelKey) FC.channelKey = ctx.location.cast.channelKey;
       }
     }
     try { FC.eth = await sdk.wallet.getEthereumProvider(); } catch {}
+    if (FC.caps.has('actions.requestFullScreen') && sdk.actions && sdk.actions.requestFullScreen) {
+      const fb = $('fsbtn'); fb.hidden = false;
+      fb.onclick = async () => {
+        try {
+          if (!FC.fs) { await sdk.actions.requestFullScreen(); FC.fs = true; fb.textContent = 'Exit full screen'; }
+          else if (sdk.actions.exitFullScreen) { await sdk.actions.exitFullScreen(); FC.fs = false; fb.textContent = 'Full screen'; }
+        } catch {}
+      };
+    }
     if (ctx && ctx.client && !ctx.client.added) { const b = $('addapp'); b.hidden = false; b.onclick = async () => { try { await sdk.actions.addMiniApp(); b.hidden = true; } catch {} }; }
     document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[target=_blank]'); if (a && a.href && a.id !== 'fc') { e.preventDefault(); sdk.actions.openUrl(a.href); } });
   } catch {}
@@ -194,8 +231,41 @@ const fcReady = (async () => {
 const fcDone = () => fcReady.then(() => FC.sdk && FC.sdk.actions.ready().catch(() => {}));
 const provider = () => FC.eth || window.ethereum;
 async function share(text, url) {
-  if (FC.on) { try { await FC.sdk.actions.composeCast({ text, embeds: [url] }); return true; } catch {} }
+  if (FC.on) {
+    try {
+      const opts = { text, embeds: [url] };
+      if (FC.channelKey) opts.channelKey = FC.channelKey;
+      await FC.sdk.actions.composeCast(opts);
+      return true;
+    } catch {}
+  }
   return false;
+}
+function openFcProfile(fid, handle) {
+  const webUrl = handle ? ('https://farcaster.xyz/' + encodeURIComponent(handle)) : ('https://farcaster.xyz/~/profiles/' + fid);
+  if (FC.on && FC.sdk && FC.sdk.actions) {
+    if (fid > 0 && FC.sdk.actions.viewProfile) { FC.sdk.actions.viewProfile({ fid }).catch(() => {}); return; }
+    if (FC.sdk.actions.openUrl) { FC.sdk.actions.openUrl(webUrl).catch(() => {}); return; }
+  }
+  window.open(webUrl, '_blank', 'noopener');
+}
+
+// ---------- Cryptographic wallet -> Farcaster verification (keyless CORS, graceful fallback) ----------
+async function resolveWalletIdentity(addr) {
+  const a = addr.toLowerCase();
+  const key = 'poziv:id:' + a;
+  try { const hit = sessionStorage.getItem(key); if (hit) return JSON.parse(hit); } catch {}
+  try {
+    const r = await fetch('https://api.web3.bio/ns/' + a, { signal: AbortSignal.timeout(4500) });
+    if (!r.ok) return null;
+    const list = await r.json();
+    if (!Array.isArray(list)) return null;
+    const fc = list.find((p) => p && p.platform === 'farcaster' && String(p.address || '').toLowerCase() === a && p.identity);
+    const ens = list.find((p) => p && (p.platform === 'basenames' || p.platform === 'ens') && p.identity);
+    const out = { handle: fc ? String(fc.identity) : null, name: ens ? String(ens.identity) : null };
+    try { sessionStorage.setItem(key, JSON.stringify(out)); } catch {}
+    return out;
+  } catch { return null; }
 }
 
 // ---------- read side: public RPC with fallback ----------
@@ -225,7 +295,7 @@ async function getTally(id) { const w = words(await call(VOTES, SEL.tally + word
 function decodeLog(log) {
   const d = log.data.slice(2), at = (i) => BigInt('0x' + d.slice(i * 64, i * 64 + 64));
   const off = Number(at(2)) * 2, len = Number(BigInt('0x' + d.slice(off, off + 64)));
-  return { id: Number(BigInt(log.topics[1])), fid: Number(BigInt(log.topics[3])), deadline: Number(at(1)), text: dec.decode(hexToBytes(d.slice(off + 64, off + 64 + len * 2))), tx: log.transactionHash };
+  return { id: Number(BigInt(log.topics[1])), fid: Number(BigInt(log.topics[3])), deadline: Number(at(1)), text: dec.decode(hexToBytes(d.slice(off + 64, off + 64 + len * 2))), tx: log.transactionHash, block: Number(log.blockNumber) };
 }
 const blockTs = async (n) => Number((await rpc('eth_getBlockByNumber', ['0x' + n.toString(16), false])).timestamp);
 let headCache;
@@ -246,6 +316,98 @@ async function claimText(c) {
   const log = (logs || []).find((l) => l.address.toLowerCase() === REG && !l.removed);
   if (!log) throw new Error('text not found');
   const r = decodeLog(log); sessionStorage.setItem(key, JSON.stringify(r)); return r;
+}
+
+// Read active voters on Base and cross-check Network State Citizen token (0x4ecfed...028d) + verified Farcaster wallet
+async function loadVoters(id, startBlockHint, bCount, dCount) {
+  const box = $('voterbox'), citEl = $('vcitizen'), cntEl = $('vcount'), rowsEl = $('vrows');
+  const total = bCount + dCount;
+  if (!total) { box.hidden = true; return; }
+  box.hidden = false;
+  try {
+    const h = await head();
+    const startB = Math.max(VOTES_FROM, startBlockHint || VOTES_FROM);
+    const endB = h.n;
+    const SPAN = 45000;
+    const seen = new Map(); // voter -> latest { fid, block }
+    const addLogs = (logs) => {
+      for (const l of logs || []) {
+        if (l.removed || l.address.toLowerCase() !== VOTES) continue;
+        const voter = '0x' + l.topics[2].slice(26).toLowerCase();
+        const d = l.data.slice(2);
+        const fid = d.length >= 128 ? Number(BigInt('0x' + d.slice(64, 128))) : 0;
+        const blk = Number(l.blockNumber || 0);
+        const prev = seen.get(voter);
+        if (!prev || blk >= prev.block) seen.set(voter, { fid, block: blk });
+      }
+    };
+    const getChunk = (from, to) => rpc('eth_getLogs', [{ address: VOTES, topics: [T_VOTED, '0x' + word(id)], fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) }]).catch(() => []);
+    if (endB - startB <= SPAN) {
+      addLogs(await getChunk(startB, endB));
+    } else {
+      const [firstLogs, lastLogs] = await Promise.all([
+        getChunk(startB, startB + SPAN),
+        getChunk(Math.max(startB + SPAN + 1, endB - SPAN), endB)
+      ]);
+      addLogs(firstLogs); addLogs(lastLogs);
+      let cursor = endB - SPAN - 1;
+      let guard = 0;
+      while (seen.size < total && cursor > startB + SPAN && guard < 8) {
+        const from = Math.max(startB + SPAN + 1, cursor - SPAN);
+        addLogs(await getChunk(from, cursor));
+        cursor = from - 1;
+        guard++;
+      }
+    }
+    const candidates = Array.from(seen.entries());
+    const verified = (await Promise.all(candidates.map(async ([voter, meta]) => {
+      const side = Number(BigInt(await call(VOTES, SEL.voteOf + word(id) + voter.slice(2).padStart(64, '0')).catch(() => '0x0')));
+      if (side !== 1 && side !== 2) return null;
+      const [nsHex, idInfo] = await Promise.all([
+        call(NS_VOTE, SEL.balanceOf + voter.slice(2).padStart(64, '0')).catch(() => '0x0'),
+        resolveWalletIdentity(voter)
+      ]);
+      return { voter, side, fid: meta.fid, citizen: BigInt(nsHex) > 0n, handle: idInfo && idInfo.handle, name: idInfo && idInfo.name, block: meta.block };
+    }))).filter(Boolean).sort((a, b) => b.block - a.block);
+
+    let citB = 0, citD = 0;
+    for (const v of verified) { if (v.citizen) { if (v.side === 1) citB++; else citD++; } }
+    citEl.textContent = '';
+    const bTag = document.createElement('b');
+    bTag.textContent = verified.length === total ? 'NS Citizens: ' : ('NS Citizens (' + verified.length + '/' + total + ' read): ');
+    citEl.append(bTag, citB + ' Back · ' + citD + ' Doubt');
+    cntEl.textContent = verified.length + (verified.length === 1 ? ' verified wallet' : ' verified wallets');
+
+    rowsEl.textContent = '';
+    for (const v of verified) {
+      const row = document.createElement('div'); row.className = 'vrow';
+      const who = document.createElement('span'); who.className = 'vwho';
+      if (v.handle) {
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'author-btn';
+        btn.textContent = '@' + v.handle;
+        btn.onclick = () => openFcProfile(v.fid, v.handle);
+        const addr = document.createElement('span'); addr.className = 'fine'; addr.textContent = ' (' + short(v.voter) + ')';
+        who.append(btn, addr);
+      } else {
+        const addr = document.createElement('span'); addr.textContent = v.name ? (v.name + ' (' + short(v.voter) + ')') : short(v.voter);
+        who.append(addr);
+        if (v.fid > 0) {
+          const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'author-btn';
+          btn.textContent = 'self-reported FID #' + v.fid;
+          btn.onclick = () => openFcProfile(v.fid, null);
+          who.append(' · ', btn);
+        }
+      }
+      const meta = document.createElement('span'); meta.className = 'vmeta';
+      if (v.citizen) { const t = document.createElement('span'); t.className = 'vtag'; t.textContent = 'NS Citizen'; meta.append(t); }
+      const s = document.createElement('b'); s.textContent = v.side === 1 ? 'Backed' : 'Doubted';
+      meta.append(s);
+      row.append(who, meta);
+      rowsEl.append(row);
+    }
+  } catch {
+    citEl.textContent = 'Voter details temporarily unavailable.';
+  }
 }
 
 function setNet(ok, txt) { $('netdot').classList.toggle('on', ok); $('net').textContent = txt; }
@@ -325,7 +487,7 @@ function homeView() {
     const btn = $('publish'); btn.disabled = true;
     try {
       if (fee === null) fee = BigInt(await call(REG, SEL.feeWei));
-      const data = '0x' + SEL.registerWithEth + word(96) + word(dl) + word(FC.fid) + word(bytes.length) + bytesToHex(bytes).padEnd(Math.ceil(bytes.length / 32) * 64, '0');
+      const data = withBuilderCode('0x' + SEL.registerWithEth + word(96) + word(dl) + word(FC.fid) + word(bytes.length) + bytesToHex(bytes).padEnd(Math.ceil(bytes.length / 32) * 64, '0'));
       const { rc } = await send({ to: REG, data, value: '0x' + fee.toString(16) }, say);
       const log = rc.logs.find((l) => l.address.toLowerCase() === REG && l.topics[0] === T_REG);
       const r = decodeLog(log); sessionStorage.setItem('poziv:t:' + r.id, JSON.stringify(r));
@@ -367,13 +529,18 @@ async function claimView(id) {
         FC.sdk.back.onback = () => { location.search = ''; };
       } catch {}
     }
+    if (FC.on && FC.parentCast && FC.parentCast.hash && FC.sdk && FC.sdk.actions && FC.sdk.actions.viewCast) {
+      const sr = $('srcrow'), sb = $('srcast');
+      sr.hidden = false;
+      sb.onclick = () => { FC.sdk.actions.viewCast({ hash: FC.parentCast.hash }).catch(() => {}); };
+    }
   });
   loadCompactList(id);
   const url = location.origin + location.pathname + '?id=' + id;
   $('cid').textContent = 'CALL #' + id;
   const vs = (m, err) => { $('vstatus').textContent = m; $('vstatus').classList.toggle('err', !!err); };
   $('copy').onclick = async () => { try { await navigator.clipboard.writeText(url); $('copystat').textContent = 'Link copied.'; } catch { $('copystat').textContent = url; } };
-  let c, shareText = 'Back it or doubt it — votes live on Base.';
+  let c, cBlock = VOTES_FROM, shareText = 'Back it or doubt it — votes live on Base.';
   try {
     const n = Number(BigInt(await call(REG, SEL.count)));
     if (id >= n) { $('ctext').textContent = 'This call does not exist.'; setNet(true, 'Live on Base'); return; }
@@ -388,23 +555,27 @@ async function claimView(id) {
     $('nb').textContent = b; $('nd').textContent = d;
     $('bb').style.width = t ? (100 * b / t) + '%' : '0'; $('bd').style.width = t ? (100 * d / t) + '%' : '0';
     if (mine !== undefined) { $('vb').classList.toggle('mine', mine === 1); $('vd').classList.toggle('mine', mine === 2); }
+    loadVoters(id, cBlock, b, d).catch(() => {});
   };
   refresh().catch(() => {});
-  claimText(c).then((r) => {
+  Promise.all([claimText(c), resolveWalletIdentity(c.author)]).then(([r, idInfo]) => {
+    if (r.block) cBlock = r.block;
     $('ctext').textContent = r.text;
-    $('proof').innerHTML = ''; const a = document.createElement('a'); a.href = SCAN + 'tx/' + r.tx; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Registration on Basescan'; $('proof').append(a);
-    if (r.fid && r.fid > 0) {
-      $('cauthor').innerHTML = 'by ' + short(c.author) + ' · <button class="author-btn" id="authfid" type="button">view @FID ' + r.fid + '</button>';
-      const ab = $('authfid');
-      if (ab) {
-        ab.onclick = () => {
-          if (FC.on && FC.sdk && FC.sdk.actions && FC.sdk.actions.viewProfile) {
-            FC.sdk.actions.viewProfile({ fid: r.fid }).catch(() => {});
-          } else {
-            window.open('https://farcaster.xyz/~/profiles/' + r.fid, '_blank');
-          }
-        };
-      }
+    $('proof').textContent = ''; const a = document.createElement('a'); a.href = SCAN + 'tx/' + r.tx; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Registration on Basescan'; $('proof').append(a);
+    const au = $('cauthor'); au.textContent = 'by ';
+    if (idInfo && idInfo.handle) {
+      const btn = document.createElement('button'); btn.className = 'author-btn'; btn.id = 'authfid'; btn.type = 'button';
+      btn.textContent = '@' + idInfo.handle;
+      btn.onclick = () => openFcProfile(r.fid || 0, idInfo.handle);
+      au.append(btn, ' (' + short(c.author) + ')');
+    } else if (r.fid && r.fid > 0) {
+      au.append(short(c.author) + ' · ');
+      const btn = document.createElement('button'); btn.className = 'author-btn'; btn.id = 'authfid'; btn.type = 'button';
+      btn.textContent = 'self-reported FID #' + r.fid;
+      btn.onclick = () => openFcProfile(r.fid, null);
+      au.append(btn);
+    } else {
+      au.append(idInfo && idInfo.name ? (idInfo.name + ' (' + short(c.author) + ')') : short(c.author));
     }
     shareText = '“' + r.text + '”' + '\n\nBack it or doubt it — votes live on Base.';
     $('fc').href = 'https://farcaster.xyz/~/compose?text=' + encodeURIComponent('“' + r.text + '”' + '\n\nBack it or doubt it — votes live on Base.') + '&embeds[]=' + encodeURIComponent(url);
@@ -427,6 +598,7 @@ async function claimView(id) {
         embeds: [url]
       };
       if (parentHash) opts.parent = { type: 'cast', hash: parentHash };
+      if (FC.channelKey) opts.channelKey = FC.channelKey;
       try { await FC.sdk.actions.composeCast(opts); } catch {}
     };
   }
@@ -440,7 +612,7 @@ async function claimView(id) {
       const side = Number(btn.dataset.side);
       $('vb').disabled = $('vd').disabled = true;
       try {
-        const { from } = await send({ to: VOTES, data: '0x' + SEL.vote + word(id) + word(side) + word(FC.fid) }, vs);
+        const { from } = await send({ to: VOTES, data: withBuilderCode('0x' + SEL.vote + word(id) + word(side) + word(FC.fid)) }, vs);
         const mine = Number(BigInt(await call(VOTES, SEL.voteOf + word(id) + from.slice(2).padStart(64, '0'))));
         await refresh(mine); vs(mine === side ? 'Your vote is on Base. You can change it until the deadline.' : 'Recorded.');
         if (FC.on && FC.sdk && FC.sdk.haptics) {
