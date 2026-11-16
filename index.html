@@ -67,6 +67,16 @@ footer a{overflow-wrap:anywhere}
 @media(prefers-reduced-motion:no-preference){.btn,.ghost,.vote{transition:background 150ms ease,border-color 150ms ease}}
 .hdr{display:flex;gap:10px;align-items:center}#addapp{padding:6px 12px;font-size:14px}
 body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-left:18px;padding-right:18px}
+.share-note{background:#fff;border:1px solid var(--blue);border-radius:6px;padding:12px 14px;margin-bottom:18px;font-size:13px;line-height:1.5}
+.share-note b{color:var(--blue)}
+.author-btn{background:transparent;border:0;padding:0;color:var(--blue);cursor:pointer;font-weight:600;font-size:inherit;text-decoration:underline}
+.author-btn:hover{color:var(--blue2)}
+.other-calls{margin-top:36px;border-top:1px solid var(--line);padding-top:24px}
+.other-calls h3{font-size:12px;margin:0 0 12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.compact-items{display:flex;flex-direction:column;gap:8px}
+.compact-item{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);border-radius:4px;padding:10px 14px;text-decoration:none;color:var(--ink);font-size:13px}
+.compact-item:hover{border-color:var(--blue)}
+.compact-item span{color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
@@ -78,6 +88,7 @@ body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-le
   <section class="intro"><div class="eyebrow">Public predictions, kept on Base</div><h1>Make a call.<br><span>Let people weigh in.</span></h1><p class="lead">Say what you think will happen and by when. Anyone can back it or doubt it from their own wallet. No account, no server — the record lives onchain.</p></section>
   <div class="workspace">
     <section aria-label="Write your call">
+      <div id="sharenote" class="share-note" hidden><b>Shared from Farcaster:</b> Drafted from a cast by <span id="shareauthor"></span>. You sign with your own wallet — the original author is credited in the draft.</div>
       <form id="f" novalidate>
         <label for="c">What will happen?</label>
         <textarea id="c" rows="4" placeholder="ETH closes above $2,500 on December 31."></textarea>
@@ -119,10 +130,15 @@ body.fc header{height:64px}body.fc header,body.fc main,body.fc footer{padding-le
       <h2>Bring people in.</h2>
       <p>Every vote is a signed transaction from the voter's own wallet on Base — a few cents of gas at most, paid by them. You can change your vote until the deadline.</p>
       <div class="row"><a class="btn" id="fc" target="_blank" rel="noopener"><span>Share on Farcaster</span><span aria-hidden="true">↗</span></a></div>
+      <div class="row" id="replyrow" hidden style="margin-top:12px"><button class="btn" id="replythread" type="button" style="background:#492cb7"><span>Reply in Farcaster thread</span><span aria-hidden="true">↵</span></button></div>
       <div class="row" style="margin-top:12px"><button class="ghost" id="copy" type="button">Copy link</button><a class="ghost" href="?">Make your own call</a></div>
       <p class="fine" id="copystat" role="status"></p>
       <p class="fine" id="proof"></p>
     </section>
+  </div>
+  <div class="other-calls" id="othercalls" hidden>
+    <h3 class="eyebrow">Other calls on Base</h3>
+    <div class="compact-items" id="citems"></div>
   </div>
 </section>
 
@@ -154,14 +170,22 @@ const fmtDate = (s) => new Date(s * 1000).toLocaleDateString('en-GB', { day: 'nu
 $('lreg').href = SCAN + 'address/' + REG; $('lvot').href = SCAN + 'address/' + VOTES;
 
 // ---------- Farcaster mini app: SDK loads only inside a Farcaster client ----------
-const FC = { on: false, sdk: null, fid: 0, eth: null };
+const FC = { on: false, sdk: null, fid: 0, eth: null, ctx: null, parentCast: null, shareCast: null };
 const fcReady = (async () => {
   if (window.parent === window && !window.ReactNativeWebView) return;
   try {
     const { sdk } = await import('./fc-sdk.js');
     if (!(await sdk.isInMiniApp())) return;
     FC.sdk = sdk; FC.on = true; document.body.classList.add('fc');
-    const ctx = await sdk.context; FC.fid = (ctx && ctx.user && Number(ctx.user.fid)) || 0;
+    const ctx = await sdk.context; FC.ctx = ctx;
+    FC.fid = (ctx && ctx.user && Number(ctx.user.fid)) || 0;
+    if (ctx && ctx.location) {
+      if (ctx.location.type === 'cast_embed' && ctx.location.cast) {
+        FC.parentCast = ctx.location.cast;
+      } else if (ctx.location.type === 'cast_share' && ctx.location.cast) {
+        FC.shareCast = ctx.location.cast;
+      }
+    }
     try { FC.eth = await sdk.wallet.getEthereumProvider(); } catch {}
     if (ctx && ctx.client && !ctx.client.added) { const b = $('addapp'); b.hidden = false; b.onclick = async () => { try { await sdk.actions.addMiniApp(); b.hidden = true; } catch {} }; }
     document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[target=_blank]'); if (a && a.href && a.id !== 'fc') { e.preventDefault(); sdk.actions.openUrl(a.href); } });
@@ -272,6 +296,24 @@ function homeView() {
   if (!d.value) d.value = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 30)).toISOString().slice(0, 10);
   const upd = () => { const n = enc.encode(c.value.trim()).length; $('count').textContent = n + ' / 320'; $('count').style.color = n > 320 ? 'var(--bad)' : ''; $('pv').textContent = c.value.trim() || 'Your call appears here.'; $('pvd').textContent = d.value ? fmtDate(Date.parse(d.value) / 1000) : '—'; };
   c.addEventListener('input', upd); d.addEventListener('input', upd); upd();
+  fcReady.then(() => {
+    if (FC.on && FC.sdk && FC.sdk.back) { try { FC.sdk.back.hide(); } catch {} }
+    if (FC.shareCast) {
+      const sc = FC.shareCast;
+      const author = sc.author?.username ? ('@' + sc.author.username) : (sc.author?.displayName || (sc.author?.fid ? ('FID #' + sc.author.fid) : 'Farcaster author'));
+      $('sharenote').hidden = false;
+      $('shareauthor').textContent = author;
+      if (!c.value && sc.text) {
+        let draft = sc.text.trim();
+        if (enc.encode(draft).length > 320) {
+          while (enc.encode(draft + '…').length > 320) draft = draft.slice(0, -1);
+          draft += '…';
+        }
+        c.value = draft;
+        upd();
+      }
+    }
+  });
   let fee = null;
   call(REG, SEL.feeWei).then((h) => { fee = BigInt(h); $('feeline').textContent = 'You sign with your own wallet. Registry fee ' + (Number(fee) / 1e18).toFixed(6) + ' ETH plus gas, shown in your wallet before you confirm.'; }).catch(() => {});
   $('f').addEventListener('submit', async (ev) => {
@@ -318,6 +360,15 @@ async function loadList() {
 // ---------- claim ----------
 async function claimView(id) {
   $('claim').hidden = false;
+  fcReady.then(() => {
+    if (FC.on && FC.sdk && FC.sdk.back) {
+      try {
+        FC.sdk.back.show().catch(() => {});
+        FC.sdk.back.onback = () => { location.search = ''; };
+      } catch {}
+    }
+  });
+  loadCompactList(id);
   const url = location.origin + location.pathname + '?id=' + id;
   $('cid').textContent = 'CALL #' + id;
   const vs = (m, err) => { $('vstatus').textContent = m; $('vstatus').classList.toggle('err', !!err); };
@@ -342,28 +393,95 @@ async function claimView(id) {
   claimText(c).then((r) => {
     $('ctext').textContent = r.text;
     $('proof').innerHTML = ''; const a = document.createElement('a'); a.href = SCAN + 'tx/' + r.tx; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Registration on Basescan'; $('proof').append(a);
+    if (r.fid && r.fid > 0) {
+      $('cauthor').innerHTML = 'by ' + short(c.author) + ' · <button class="author-btn" id="authfid" type="button">view @FID ' + r.fid + '</button>';
+      const ab = $('authfid');
+      if (ab) {
+        ab.onclick = () => {
+          if (FC.on && FC.sdk && FC.sdk.actions && FC.sdk.actions.viewProfile) {
+            FC.sdk.actions.viewProfile({ fid: r.fid }).catch(() => {});
+          } else {
+            window.open('https://farcaster.xyz/~/profiles/' + r.fid, '_blank');
+          }
+        };
+      }
+    }
     shareText = '“' + r.text + '”' + '\n\nBack it or doubt it — votes live on Base.';
     $('fc').href = 'https://farcaster.xyz/~/compose?text=' + encodeURIComponent('“' + r.text + '”' + '\n\nBack it or doubt it — votes live on Base.') + '&embeds[]=' + encodeURIComponent(url);
     document.title = 'Poziv — ' + r.text.slice(0, 60);
   }).catch(() => { $('ctext').textContent = 'The call exists, but its text could not be read right now.'; });
   $('fc').href = 'https://farcaster.xyz/~/compose?embeds[]=' + encodeURIComponent(url);
   $('fc').onclick = (e) => { if (!FC.on) return; e.preventDefault(); share(shareText, url); };
+  function showReply(side) {
+    if (!FC.on) return;
+    const rep = $('replyrow');
+    if (!rep) return;
+    rep.hidden = false;
+    $('replythread').onclick = async () => {
+      const sideName = side === 1 ? 'Backed' : 'Doubted';
+      const txt = $('ctext').textContent || '';
+      const quote = txt ? ('“' + txt.slice(0, 100) + '…”') : '';
+      const parentHash = (FC.parentCast && FC.parentCast.hash) || undefined;
+      const opts = {
+        text: sideName + ' this call on Base: ' + quote,
+        embeds: [url]
+      };
+      if (parentHash) opts.parent = { type: 'cast', hash: parentHash };
+      try { await FC.sdk.actions.composeCast(opts); } catch {}
+    };
+  }
   if (!open) { vs('Voting closed at the deadline. The final count is above.'); return; }
   for (const btn of [$('vb'), $('vd')]) {
     btn.disabled = false;
     btn.onclick = async () => {
+      if (FC.on && FC.sdk && FC.sdk.haptics) {
+        try { FC.sdk.haptics.impactOccurred('medium'); } catch {}
+      }
       const side = Number(btn.dataset.side);
       $('vb').disabled = $('vd').disabled = true;
       try {
         const { from } = await send({ to: VOTES, data: '0x' + SEL.vote + word(id) + word(side) + word(FC.fid) }, vs);
         const mine = Number(BigInt(await call(VOTES, SEL.voteOf + word(id) + from.slice(2).padStart(64, '0'))));
         await refresh(mine); vs(mine === side ? 'Your vote is on Base. You can change it until the deadline.' : 'Recorded.');
-      } catch (e) { vs(explain(e), true); } finally { $('vb').disabled = $('vd').disabled = false; }
+        if (FC.on && FC.sdk && FC.sdk.haptics) {
+          try { FC.sdk.haptics.notificationOccurred('success'); } catch {}
+        }
+        showReply(mine);
+      } catch (e) {
+        if (FC.on && FC.sdk && FC.sdk.haptics) {
+          try { FC.sdk.haptics.notificationOccurred('warning'); } catch {}
+        }
+        vs(explain(e), true);
+      } finally { $('vb').disabled = $('vd').disabled = false; }
     };
   }
   fcReady.then(() => provider() && provider().request({ method: 'eth_accounts' })).then(async (acc) => {
     if (!acc || !acc[0]) return; const mine = Number(BigInt(await call(VOTES, SEL.voteOf + word(id) + acc[0].toLowerCase().slice(2).padStart(64, '0')))); refresh(mine);
+    if (mine === 1 || mine === 2) showReply(mine);
   }).catch(() => {});
+}
+
+async function loadCompactList(curId) {
+  const wrap = $('othercalls'), box = $('citems');
+  try {
+    const n = Number(BigInt(await call(REG, SEL.count)));
+    if (n <= 1) return;
+    wrap.hidden = false;
+    box.textContent = '';
+    for (let i = n - 1; i >= Math.max(0, n - 6); i--) {
+      if (i === curId) continue;
+      const a = document.createElement('a'); a.className = 'compact-item'; a.href = '?id=' + i;
+      const left = document.createElement('span'); left.style.color = 'var(--ink)'; left.style.fontWeight = '600'; left.textContent = '#' + i + ' …';
+      const right = document.createElement('span'); right.textContent = '…';
+      a.append(left, right); box.append(a);
+      Promise.all([getClaim(i), getTally(i)]).then(async ([c, [b, d]]) => {
+        const open = Date.now() / 1000 < c.deadline;
+        const t = await claimText(c).catch(() => ({ text: 'Call #' + i }));
+        left.textContent = '#' + i + ' ' + (t.text.length > 40 ? t.text.slice(0, 40) + '…' : t.text);
+        right.textContent = (open ? 'Open' : 'Closed') + ' · Back ' + b + ' / Doubt ' + d;
+      }).catch(() => {});
+    }
+  } catch {}
 }
 
 const p = new URLSearchParams(location.search).get('id');
